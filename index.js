@@ -401,6 +401,7 @@ app.delete('/recipes/:recipeId/reviews/:reviewId', async (req, res) => {
     }
 });
 
+
 app.post('/users', async function (req, res) {
     const result = await db.collection("users").insertOne({
         'email': req.body.email,
@@ -411,6 +412,7 @@ app.post('/users', async function (req, res) {
         "result": result
     })
   })
+
 
 
 
