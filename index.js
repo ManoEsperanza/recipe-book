@@ -46,6 +46,10 @@ const dbname = "recipe_book";
 const { ObjectId } = require("mongodb");
 
 const mongoUri = process.env.MONGO_URI;
+const bcrypt = require('bcrypt')
+
+
+
 
 let app = express();
 
@@ -320,7 +324,93 @@ app.post('/recipes/:id/reviews', async (req, res) => {
     }
 });
 
+app.put('/recipes/:recipeId/reviews/:reviewId', async (req, res) => {
+    try {
+        const recipeId = req.params.recipeId;
+        const reviewId = req.params.reviewId;
+        const { user, rating, comment } = req.body;
 
+        // Basic validation
+        if (!user || !rating || !comment) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Create the updated review object
+        const updatedReview = {
+            review_id: new ObjectId(reviewId),
+            user,
+            rating: Number(rating),
+            comment,
+            date: new Date()  // Update the date to reflect the edit time
+        };
+
+        // Update the specific review in the recipe document
+        const result = await db.collection('recipes').updateOne(
+            { 
+                _id: new ObjectId(recipeId),
+                "reviews.review_id": new ObjectId(reviewId)
+            },
+            { 
+                $set: { "reviews.$": updatedReview }
+            }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ error: 'Recipe or review not found' });
+        }
+
+        res.json({
+            message: 'Review updated successfully',
+            reviewId: reviewId
+        });
+    } catch (error) {
+        console.error('Error updating review:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.delete('/recipes/:recipeId/reviews/:reviewId', async (req, res) => {
+    try {
+        const recipeId = req.params.recipeId;
+        const reviewId = req.params.reviewId;
+
+        // Remove the specific review from the recipe document
+        const result = await db.collection('recipes').updateOne(
+            { _id: new ObjectId(recipeId) },
+            { 
+                $pull: { 
+                    reviews: { review_id: new ObjectId(reviewId) }
+                }
+            }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ error: 'Recipe not found' });
+        }
+
+        if (result.modifiedCount === 0) {
+            return res.status(404).json({ error: 'Review not found' });
+        }
+
+        res.json({
+            message: 'Review deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting review:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/users', async function (req, res) {
+    const result = await db.collection("users").insertOne({
+        'email': req.body.email,
+        'password': await bcrypt.hash(req.body.password, 12)
+    })
+    res.json({
+        "message": "New user account",
+        "result": result
+    })
+  })
 
 
 
