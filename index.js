@@ -47,6 +47,16 @@ const { ObjectId } = require("mongodb");
 
 const mongoUri = process.env.MONGO_URI;
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken');
+
+const generateAccessToken = (id, email) => {
+    return jwt.sign({
+        'user_id': id,
+        'email': email
+    }, process.env.TOKEN_SECRET, {
+        expiresIn: "1h"
+    });
+}
 
 
 
@@ -411,7 +421,26 @@ app.post('/users', async function (req, res) {
         "message": "New user account",
         "result": result
     })
-  })
+  });
+
+  app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+    const user = await db.collection('users').findOne({ email: email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid password' });
+    }
+    const accessToken = generateAccessToken(user._id, user.email);
+    res.json({ accessToken: accessToken });
+  });
+  
+  
 
 
 
@@ -421,6 +450,8 @@ app.post('/users', async function (req, res) {
 }
 
 main();
+
+
 
 // START SERVER
 app.listen(3000, () => {
