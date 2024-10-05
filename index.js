@@ -65,24 +65,24 @@ async function main() {
             res.json({ message: 'This is a protected route', user: req.user });
         });
 
+        app.get('/protected-route', verifyToken, (req, res) => {
 
+            app.get("/recipes", async (req, res) => {
+                try {
+                    const recipes = await db.collection("recipes").find().project({
+                        name: 1,
+                        cuisine: 1,
+                        tags: 1,
+                        prepTime: 1,
+                    }).toArray();
 
-        app.get("/recipes", async (req, res) => {
-            try {
-                const recipes = await db.collection("recipes").find().project({
-                    name: 1,
-                    cuisine: 1,
-                    tags: 1,
-                    prepTime: 1,
-                }).toArray();
-
-                res.json({ recipes });
-            } catch (error) {
-                console.error("Error fetching recipes:", error);
-                res.status(500).json({ error: "Internal server error" });
-            }
+                    res.json({ recipes });
+                } catch (error) {
+                    console.error("Error fetching recipes:", error);
+                    res.status(500).json({ error: "Internal server error" });
+                }
+            });
         });
-
         app.get("/recipes/:id", async (req, res) => {
             try {
                 const id = req.params.id;
