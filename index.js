@@ -415,11 +415,19 @@ async function main() {
             const accessToken = generateAccessToken(user._id, user.email);
             res.json({ accessToken: accessToken });
         });
+        
 
-
-
-
-
+        app.use((req, res, next) => {
+            console.log(`${req.method} ${req.url}`);
+            next();
+          });
+          
+          app.use((req, res, next) => {
+            console.log(`Response status: ${res.statusCode}`);
+            next();
+          });
+          
+        
 
     })
 
